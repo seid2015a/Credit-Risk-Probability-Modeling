@@ -1,5 +1,3 @@
-# src/train.py
-
 import pandas as pd
 import numpy as np
 import joblib
@@ -20,7 +18,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mlflow
 import mlflow.sklearn
-from scipy.stats import uniform, randint # For RandomizedSearchCV
+from scipy.stats import uniform, randint 
 
 # Ensure necessary directories exist
 MODELS_DIR = '../models'
@@ -162,10 +160,7 @@ def train_risk_probability_model(X_processed, y_target, model_name_suffix="defau
     return best_model_overall, y_proba, y_test # Return last y_proba/y_test for score model
 
 def train_credit_score_model(risk_probabilities, y_target, model_name="credit_score_scaling"):
-    """
-    Develops a simple model to assign a credit score from risk probability estimates.
-    Higher score typically means lower risk (lower PD).
-    """
+    
     print(f"\n--- Training Credit Score Model ---")
 
     min_pd, max_pd = np.min(risk_probabilities), np.max(risk_probabilities)
@@ -177,7 +172,7 @@ def train_credit_score_model(risk_probabilities, y_target, model_name="credit_sc
         normalized_pd = np.zeros_like(risk_probabilities) # If all same, map to 0.5 normalized
     else:
         normalized_pd = (risk_probabilities - min_pd) / (max_pd - min_pd)
-    
+
     # Invert and scale such that higher PD -> lower score
     credit_scores = min_score + (1 - normalized_pd) * (max_score - min_score)
     credit_scores = np.round(credit_scores).astype(int)
@@ -210,15 +205,10 @@ def train_credit_score_model(risk_probabilities, y_target, model_name="credit_sc
     return score_mapping_params
 
 def train_optimal_loan_model(X_processed, y_target, model_name="optimal_loan_rules"):
-    """
-    Develops a rule-based model that predicts the optimal amount and duration of the loan.
-    This is based on risk tiers derived from predicted probabilities.
-    """
+    
     print(f"\n--- Developing Optimal Loan Recommendation Logic ---")
 
-    # Define risk tiers based on hypothetical PD ranges
-    # These thresholds are illustrative and need to be determined by business strategy and risk appetite.
-    # The PD thresholds should align with the risk probability model's output.
+    
     loan_rules = {
         'Very Low Risk': {'max_pd': 0.05, 'recommended_amount_range': (8000, 20000), 'recommended_duration_months': (36, 60)},
         'Low Risk': {'max_pd': 0.15, 'recommended_amount_range': (3000, 8000), 'recommended_duration_months': (12, 36)},
@@ -232,7 +222,7 @@ def train_optimal_loan_model(X_processed, y_target, model_name="optimal_loan_rul
     print(f"Optimal loan recommendation rules saved to {loan_rules_filename}")
 
     with mlflow.start_run(run_name="Optimal_Loan_Rules"):
-        mlflow.log_params({"loan_rule_tiers": str(loan_rules)}) # Log as string
+        mlflow.log_params({"loan_rule_tiers": str(loan_rules)}) 
         mlflow.log_artifact(loan_rules_filename)
 
     return loan_rules
@@ -261,10 +251,10 @@ if __name__ == '__main__':
         processed_df_train, trained_pipeline_components = preprocess_data(raw_df_for_prep, pipeline_path, mode='train')
         processed_df_train.to_csv(processed_data_path, index=False)
         print("Preprocessing completed and processed data saved.")
-    
+
     # Load processed data
     df_processed = pd.read_csv(processed_data_path)
-    
+
     # Separate features (X) and target (y)
     if 'is_high_risk' not in df_processed.columns:
         raise ValueError("Processed data does not contain 'is_high_risk' column. Ensure HighRiskProxyGenerator is correctly applied and data_processing.py saves it.")
@@ -272,9 +262,7 @@ if __name__ == '__main__':
     y = df_processed['is_high_risk']
     X = df_processed.drop(columns=['is_high_risk'])
 
-    # Ensure X only contains numerical features after WOE and scaling.
-    # The `data_processing.py` should output a DataFrame where these are already processed.
-    # If not, you might get errors in model training (e.g., non-numeric data).
+    
 
     # Train Risk Probability Models with MLflow tracking and hyperparameter tuning
     best_risk_model, best_model_y_proba, best_model_y_test = train_risk_probability_model(X, y, model_name_suffix="FinalRun")
