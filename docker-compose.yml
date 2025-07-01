@@ -1,0 +1,36 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # Credit Risk Prediction API Service
+  credit_risk_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    # Mount the 'models' directory to persist trained models and pipelines
+    # This is important if you train locally and then containerize the API.
+    # The models directory needs to be present on the host.
+    volumes:
+      - ./models:/app/models
+    # Ensure MLflow tracking URI points to the correct host/service.
+    # If MLflow UI is running directly on your host machine, use host.docker.internal
+    environment:
+      - MLFLOW_TRACKING_URI=http://host.docker.internal:5000 # For MLflow on host
+    # If MLflow is in a separate container, use its service name:
+    # - MLFLOW_TRACKING_URI=http://mlflow_server:5000
+    depends_on:
+      # If you were to containerize MLflow as well:
+      # - mlflow_server
+      - # No specific dependency if mlflow_server is on host
+
+  # Optional: MLflow Tracking Server (uncomment to run MLflow in a container)
+  # mlflow_server:
+  #   image: ghcr.io/mlflow/mlflow:latest # Or a specific version
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ./mlruns:/mlruns # Persist MLflow tracking data
+  #   command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:///mlruns
+
